@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+from streamlit_echarts import st_echarts
 
 from src.footer import show_footer
 from src.trail_data import TRAILS_DATA
@@ -69,21 +69,94 @@ if selected_indices and len(selected_indices.selection.rows) > 0:
             selected_trail['Elevation Gain (m)']
         )
 
-        fig, ax = plt.subplots(figsize=(12, 5))
-        ax.fill_between(distance, altitude, alpha=0.3, color='steelblue')
-        ax.plot(distance, altitude, linewidth=2, color='darkblue', label='Elevation Profile')
-        ax.set_xlabel('Distance (km)', fontsize=12)
-        ax.set_ylabel('Altitude (m)', fontsize=12)
-        ax.set_title(f'Altitude Profile - {selected_trail["Name"]}', fontsize=14, fontweight='bold')
-        ax.grid(True, alpha=0.3)
-        ax.set_ylim([start_alt - 100, peak_alt + 100])
+        # Find peak position
+        peak_idx = altitude.argmax()
 
-        # Add start and end markers
-        ax.plot(distance[0], altitude[0], 'go', markersize=10, label=f'Start ({int(altitude[0])}m)')
-        ax.plot(distance[-1], altitude[-1], 'ro', markersize=10, label=f'Peak ({int(altitude[-1])}m)')
-        ax.legend()
+        # Prepare data for echarts
+        distance_data = [round(d, 2) for d in distance.tolist()]
+        altitude_data = [round(a, 1) for a in altitude.tolist()]
 
-        st.pyplot(fig)
+        # Create marker data for start, peak, and end
+        markers = [
+            {
+                'name': f'Start ({int(altitude[0])}m)',
+                'coord': [distance_data[0], altitude_data[0]],
+                'itemStyle': {'color': '#52c41a'}
+            },
+            {
+                'name': f'Peak ({int(altitude[peak_idx])}m)',
+                'coord': [distance_data[peak_idx], altitude_data[peak_idx]],
+                'itemStyle': {'color': '#f5222d'}
+            },
+            {
+                'name': f'End ({int(altitude[-1])}m)',
+                'coord': [distance_data[-1], altitude_data[-1]],
+                'itemStyle': {'color': '#52c41a'}
+            }
+        ]
+
+        # ECharts option
+        option = {
+            'tooltip': {
+                'trigger': 'axis',
+                'axisPointer': {'type': 'cross'},
+                'formatter': '{b} km<br/>Altitude: {c} m'
+            },
+            'grid': {
+                'left': '3%',
+                'right': '4%',
+                'bottom': '3%',
+                'containLabel': True
+            },
+            'xAxis': {
+                'type': 'category',
+                'boundaryGap': False,
+                'data': distance_data,
+                'name': 'Distance (km)',
+                'nameLocation': 'middle',
+                'nameGap': 30,
+                'axisLabel': {'interval': 'auto'}
+            },
+            'yAxis': {
+                'type': 'value',
+                'name': 'Altitude (m)',
+                'nameLocation': 'middle',
+                'nameGap': 50,
+                'min': int(start_alt - 100),
+                'max': int(peak_alt + 100)
+            },
+            'series': [
+                {
+                    'name': 'Altitude',
+                    'type': 'line',
+                    'smooth': True,
+                    'symbol': 'none',
+                    'lineStyle': {'width': 3, 'color': '#1890ff'},
+                    'areaStyle': {
+                        'color': {
+                            'type': 'linear',
+                            'x': 0, 'y': 0, 'x2': 0, 'y2': 1,
+                            'colorStops': [
+                                {'offset': 0, 'color': 'rgba(24, 144, 255, 0.4)'},
+                                {'offset': 1, 'color': 'rgba(24, 144, 255, 0.1)'}
+                            ]
+                        }
+                    },
+                    'data': altitude_data,
+                    'markPoint': {
+                        'data': markers,
+                        'symbolSize': 50,
+                        'label': {
+                            'show': True,
+                            'position': 'top',
+                            'formatter': '{b}'
+                        }
+                    }
+                }
+            ]
+        }
+
+        st_echarts(options=option, height='500px')
 
     except ImportError:
         st.warning("Install scipy for altitude profiles: `uv add scipy`")
