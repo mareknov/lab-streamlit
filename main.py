@@ -28,24 +28,30 @@ df = pd.DataFrame(TRAILS_DATA)
 
 # Display table
 st.markdown(
-    "<h2 style='text-align: center;'>📊 Ski Touring Trails Overview</h2>",
+    "<h2 style='text-align: center;'>📈 Ski Touring Trails Overview</h2>",
     unsafe_allow_html=True)
 st.markdown(
-    "<p style='text-align: center;'><em>Click on a row to see the terrain profile</em></p>",
+    "<p style='text-align: center;'><em>Select a trail to see the terrain profile</em></p>",
     unsafe_allow_html=True)
 
-# Create interactive table with selection
-selected_indices = st.dataframe(
+# Display the table (non-interactive)
+st.dataframe(
     df,
     use_container_width=True,
-    hide_index=True,
-    on_select="rerun",
-    selection_mode="single-row"
+    hide_index=True
+)
+
+# Trail selection using selectbox
+trail_names = df['Name'].tolist()
+selected_trail_name = st.selectbox(
+    "Choose a trail:",
+    options=["Select a trail..."] + trail_names,
+    index=0
 )
 
 # Display terrain profile when a trail is selected
-if selected_indices and len(selected_indices.selection.rows) > 0:
-    selected_idx = selected_indices.selection.rows[0]
+if selected_trail_name != "Select a trail...":
+    selected_idx = trail_names.index(selected_trail_name)
     selected_trail = df.iloc[selected_idx]
 
     st.markdown("---")
