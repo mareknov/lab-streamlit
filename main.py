@@ -27,8 +27,12 @@ st.markdown("---")
 df = pd.DataFrame(TRAILS_DATA)
 
 # Display table
-st.markdown("<h2 style='text-align: center;'>📊 Ski Touring Trails Overview</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'><em>Click on a row to see the terrain profile</em></p>", unsafe_allow_html=True)
+st.markdown(
+    "<h2 style='text-align: center;'>📊 Ski Touring Trails Overview</h2>",
+    unsafe_allow_html=True)
+st.markdown(
+    "<p style='text-align: center;'><em>Click on a row to see the terrain profile</em></p>",
+    unsafe_allow_html=True)
 
 # Create interactive table with selection
 selected_indices = st.dataframe(
@@ -45,7 +49,8 @@ if selected_indices and len(selected_indices.selection.rows) > 0:
     selected_trail = df.iloc[selected_idx]
 
     st.markdown("---")
-    st.markdown(f"<h2 style='text-align: center;'>🏔️ Terrain Profile: {selected_trail['Name']}</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align: center;'>🏔️ Terrain Profile: {selected_trail['Name']}</h2>",
+                unsafe_allow_html=True)
 
     # Display trail details
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -77,20 +82,21 @@ if selected_indices and len(selected_indices.selection.rows) > 0:
         altitude_data = [round(a, 1) for a in altitude.tolist()]
 
         # Create marker data for start, peak, and end
+        # Note: For category axis, use index position, not the actual distance value
         markers = [
             {
                 'name': f'Start ({int(altitude[0])}m)',
-                'coord': [distance_data[0], altitude_data[0]],
+                'coord': [0, float(altitude_data[0])],
                 'itemStyle': {'color': '#52c41a'}
             },
             {
                 'name': f'Peak ({int(altitude[peak_idx])}m)',
-                'coord': [distance_data[peak_idx], altitude_data[peak_idx]],
+                'coord': [int(peak_idx), float(altitude_data[peak_idx])],
                 'itemStyle': {'color': '#f5222d'}
             },
             {
                 'name': f'End ({int(altitude[-1])}m)',
-                'coord': [distance_data[-1], altitude_data[-1]],
+                'coord': [int(len(altitude_data) - 1), float(altitude_data[-1])],
                 'itemStyle': {'color': '#52c41a'}
             }
         ]
@@ -156,11 +162,15 @@ if selected_indices and len(selected_indices.selection.rows) > 0:
             ]
         }
 
-        st_echarts(options=option, height='500px')
+        # Center the chart using columns
+        col1, col2, col3 = st.columns([0.5, 3, 0.5])
+        with col2:
+            st_echarts(options=option, height='500px')
 
     except ImportError:
         st.warning("Install scipy for altitude profiles: `uv add scipy`")
-        st.info(f"**Trail starts at ~{1000 + selected_idx * 50}m and climbs {selected_trail['Elevation Gain (m)']}m over {selected_trail['Length (km)']}km**")
+        st.info(
+            f"**Trail starts at ~{1000 + selected_idx * 50}m and climbs {selected_trail['Elevation Gain (m)']}m over {selected_trail['Length (km)']}km**")
 
 else:
     st.info("👆 Select a trail from the table above to view its terrain profile")
